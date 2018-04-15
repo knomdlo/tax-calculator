@@ -1,6 +1,6 @@
-var expressConfig = require('./routes')
-var http = require('http').Server(expressConfig)
+let expressConfig = require('./routes')
+let http = require('http').Server(expressConfig)
 
-var server = http.listen(4000, () => {
+let server = http.listen(4000, () => {
     console.log('server is listening on port', server.address().port)
 })
