@@ -79,7 +79,16 @@ app.post('/calculate', (req, res) => {
     taxes.netIncome = taxes.grossSalary - taxes.tax
     taxes.netAndSa = taxes.netIncome + taxes.saAmount
     res.send(taxes)
+    taxes.saPercentage = details.saPercentage
+    taxes.computationYear = details.year
+    persist(taxes)
   }
+})
+
+app.get('/computations', (req, res) => {
+  models.TaxComputations.find({}, (err, computations) =>{
+        res.send(computations)
+    })
 })
 
 function calculateTax(grossSalary) {
@@ -99,6 +108,16 @@ function calculateTax(grossSalary) {
   let tax = taxRate.fixed + (taxRate.unitRate / 100) * grossSalary
 
   return tax
+}
+
+function persist(taxes) {
+  let taxData = new models.TaxComputations(taxes)
+
+  taxData.save((err) => {
+    if(err) {
+      console.log(err)
+    }
+  })
 }
 
 module.exports = app;

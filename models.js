@@ -1,11 +1,5 @@
 var mongoose = require('mongoose')
 
-let SalaryDetails = mongoose.model('SalaryDetails', {
-  saPercentage: Number,
-  grossSalary: Number,
-  grossAndSa: Number, //if no grossSalary
-  year: String
-})
 
 let TaxComputations = mongoose.model('TaxComputations', {
   saAmount: Number,
@@ -13,10 +7,11 @@ let TaxComputations = mongoose.model('TaxComputations', {
   grossAndSa: Number, // if gross sent
   tax: Number,
   netIncome: Number, //gross - salary
-  netAndSa: Number // Guess SA doesn't get added to tax.
+  netAndSa: Number, // Guess SA doesn't get added to tax.
+  saPercentage: Number,
+  computationYear: Number
 })
 
 module.exports = {
-  SalaryDetails: SalaryDetails,
   TaxComputations: TaxComputations
 }
