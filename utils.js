@@ -1,6 +1,28 @@
 const taxRates = require('./taxes')
 const models = require('./models')
 
+function comupteTaxDetails(details) {
+  let computations = {}
+  if (details.grossSalary) {
+    computations.saAmount = details.saPercentage * (details.grossSalary / 100);
+    computations.grossAndSa = details.grossSalary + computations.saAmount
+    computations.grossSalary = details.grossSalary
+  }
+  else if (details.grossAndSa) {
+    computations.grossSalary = (details.grossAndSa * 100) / (100 + details.saPercentage)
+    computations.saAmount = details.grossAndSa - computations.grossSalary
+    computations.grossAndSa = details.grossAndSa
+  }
+
+  computations.tax = calculateTax(computations.grossSalary)
+  computations.netIncome = computations.grossSalary - computations.tax
+  computations.netAndSa = computations.netIncome + computations.saAmount
+  // res.send(computations)
+  computations.saPercentage = details.saPercentage
+  computations.computationYear = details.year
+  // utils.persist(taxes)
+  return computations
+}
 
 function calculateTax(grossSalary) {
   let taxRate
@@ -31,6 +53,7 @@ function persist(taxes) {
 }
 
 module.exports = {
-    persist: persist,
-    calculateTax: calculateTax
+  persist: persist,
+  calculateTax: calculateTax,
+  comupteTaxDetails: comupteTaxDetails
 }

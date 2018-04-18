@@ -51,42 +51,22 @@ function apiRouter() {
         }
       })
     }
-    return res.status(500). send('Invalid uname/ password')
+    return res.status(500). send('Invalid uname/ password format')
 
   })
 
   router.post('/calculate', (req, res) => {
     let details = req.body
-    let taxes = {}
-    let error = false
     if (details.saPercentage < 9.5) {
-      error = true;
-      res.status(500).send('Superannuation percentage cannot be less than 9.5%')
+      return res.status(500).send('Superannuation percentage cannot be less than 9.5%')
     }
     else if (details.grossAndSa <= 0 && details.grossSalary <= 0) {
-      error = true
-      res.status(500).send('Income should be greater than 1')
+      return res.status(500).send('Income should be greater than 1')
     }
-    if (!error) {
-      if (details.grossSalary) {
-        taxes.saAmount = details.saPercentage * (details.grossSalary / 100);
-        taxes.grossAndSa = details.grossSalary + taxes.saAmount
-        taxes.grossSalary = details.grossSalary
-      }
-      else if (details.grossAndSa) {
-        taxes.grossSalary = (details.grossAndSa * 100) / (100 + details.saPercentage)
-        taxes.saAmount = details.grossAndSa - taxes.grossSalary
-        taxes.grossAndSa = details.grossAndSa
-      }
-
-      taxes.tax = utils.calculateTax(taxes.grossSalary)
-      taxes.netIncome = taxes.grossSalary - taxes.tax
-      taxes.netAndSa = taxes.netIncome + taxes.saAmount
-      res.send(taxes)
-      taxes.saPercentage = details.saPercentage
-      taxes.computationYear = details.year
-      utils.persist(taxes)
-    }
+    
+    let taxes = utils.comupteTaxDetails(details)
+    return res.send(taxes)
+    utils.persist(taxes)
   })
 
   router.get('/computations', (req, res) => {
