@@ -3,55 +3,54 @@ let bodyParser = require('body-parser')
 let app = express()
 let models = require('./models')
 let _ = require('lodash')
+let taxRates = require('./taxes')
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 
-
-const taxRates =
-  [
-    {
-      "incomeSlab": 1,
-      "rangeString": "0 – $18,200",
-      "range": [0, 18200],
-      "fixed": 0,
-      "unitRate": 0
-    },
-    {
-      "incomeSlab": 2,
-      "rangeString": "$18,201 – $37,000",
-      "range": [18201, 37000],
-      "fixed": 0,
-      "unitRate": 19
-    },
-    {
-      "incomeSlab": 3,
-      "rangeString": "$37,001 – $87,000",
-      "range": [37001, 87000],
-      "fixed": 3572,
-      "unitRate": 32.5
-    },
-    {
-      "incomeSlab": 4,
-      "rangeString": "$87,001 – $180,000",
-      "range": [87001, 180000],
-      "fixed": 19822,
-      "unitRate": 37
-    },
-    {
-      "incomeSlab": 5,
-      "rangeString": "$180,001 and over",
-      "range": [],
-      "fixed": 54232,
-      "unitRate": 45
-    }
-  ]
 
 app.get('/test', (req, res) => {
   res.send(taxRates)
 })
 
+app.post('/authenticate', (req, res) => {
+  const user = req.body
+  models.User.findOne({ username: user.username }, (err, result) => {
+    if (!result) {
+      return res.status(404).json({ error: 'Invalid user!!' })
+    }
+
+    if (!bcrypt.compareSync(user.password, result.password)) {
+          return res.status(401).json({ error: 'incorrect password '});
+        }
+    
+    const token = jwt.sign(user, 'asecretfortaxapp', { expiresIn: '4h' });
+    return res.send(token)
+  })
+})
+
+app.post('/addUser', (req, res) => {
+  let user = req.body
+  // let pwd = user.password
+  if (user.password) {
+    user.password = bcrypt.hashSync(user.password, 10) //Salts hard-coded
+    let userDB = new models.User(user)
+    userDB.save((err) => {
+      if (err) {
+        console.log(err)
+        res.status(404).send('Server issue. Pls try again or report error')
+      }
+      else {
+        res.status(200).send('User added successfully')
+      }
+    })
+  }
+
+})
+
 app.post('/calculate', (req, res) => {
-  // let details = new models.SalaryDetails(req.body);
   let details = req.body
   let taxes = {}
   let error = false
@@ -86,9 +85,9 @@ app.post('/calculate', (req, res) => {
 })
 
 app.get('/computations', (req, res) => {
-  models.TaxComputations.find({}, (err, computations) =>{
-        res.send(computations)
-    })
+  models.TaxComputations.find({}, (err, computations) => {
+    res.send(computations)
+  })
 })
 
 function calculateTax(grossSalary) {
@@ -114,7 +113,7 @@ function persist(taxes) {
   let taxData = new models.TaxComputations(taxes)
 
   taxData.save((err) => {
-    if(err) {
+    if (err) {
       console.log(err)
     }
   })

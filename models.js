@@ -12,6 +12,12 @@ let TaxComputations = mongoose.model('TaxComputations', {
   computationYear: Number
 })
 
+let User = mongoose.model('users', {
+  username: String,
+  password: String
+})
+
 module.exports = {
-  TaxComputations: TaxComputations
+  TaxComputations: TaxComputations,
+  User: User
 }
