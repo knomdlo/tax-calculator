@@ -21,17 +21,3 @@ module.exports =
     startScheduler : startScheduler,
     getTaxRates : getTaxRates
 }
-/* let taxRates = function () {
-    let currentTax = taxes[0]
-
-    function getTax(year) {
-        return currentTax[year]
-    }
-
-    function updateTaxes(index) {
-        currentTax = taxes[index]
-    }
-    return {
-        getTax: getTax
-    }
-} */
