@@ -4,12 +4,14 @@ const bcrypt = require('bcrypt')
 const checkJwt = require('express-jwt')
 const models = require('./models')
 const utils = require('./utils')
+const scheduler = require('./tax-scheduler')
 
 require('dotenv').config()
 function apiRouter() {
   const router = express.Router()
 
   router.use(
+    //For ease, I've kept /api/addUser also in unless array
     checkJwt({ secret: process.env.JWT_SECRET }).unless({ path: ['/api/authenticate', '/api/addUser'] })
   )
 
@@ -44,29 +46,32 @@ function apiRouter() {
       userDB.save((err) => {
         if (err) {
           console.log(err)
-          return res.status(404).send('Server issue. Pls try again or report error')
+          return res.status(404).send('DB issue. Pls try again or report error')
         }
         else {
           return res.status(200).send('User added successfully')
         }
       })
     }
-    return res.status(500). send('Invalid uname/ password format')
+    return res.status(404).send('Invalid uname/ password format')
 
   })
 
-  router.post('/calculate', (req, res) => {
-    let details = req.body
-    if (details.saPercentage < 9.5) {
-      return res.status(500).send('Superannuation percentage cannot be less than 9.5%')
+  router.post('/computations', (req, res) => {
+    const salaryDetails = req.body
+    if (salaryDetails.saPercentage < 9.5) {
+      return res.status(404).send('Superannuation percentage cannot be less than 9.5%')
     }
-    else if (details.grossAndSa <= 0 && details.grossSalary <= 0) {
-      return res.status(500).send('Income should be greater than 1')
+    else if (salaryDetails.grossAndSa <= 0 && salaryDetails.grossSalary <= 0) {
+      return res.status(404).send('Income should be greater than 1')
     }
-    
-    let taxes = utils.comupteTaxDetails(details)
-    return res.send(taxes)
+    else if(salaryDetails.grossAndSa > 0 && salaryDetails.grossSalary > 0) {
+      return res.status(404).send('Income must be mentioned as with gross or gross+SA, not both')
+    }
+
+    let taxes = utils.comupteTaxDetails(salaryDetails)
     utils.persist(taxes)
+    return res.send(taxes)
   })
 
   router.get('/computations', (req, res) => {
@@ -75,9 +80,47 @@ function apiRouter() {
     })
   })
 
-  router.get('/test', (req, res) => {
-  res.send('Voila rewiring works')
-})
+  router.get('/computations/:id', (req, res) => {
+    const id = req.params.id
+    models.TaxComputations.findOne({ "_id": id }, (err, computation) => {
+      if (err) {
+        console.log(error)
+        return res.status(500).send(err)
+      }
+      if (!!computation) {
+        return res.send(computation)
+      }
+      else return res.status(500).send('No record with the given id')
+    })
+  })
+
+  router.delete('/computations', (req, res) => {
+    models.TaxComputations.remove({}, (err, result) => {
+      if (err) {
+        console.log(err)
+      }
+      else return res.send('Successfully deleted the entire history')
+    })
+  })
+
+  router.delete('/computations/:id', (req, res) => {
+    let id = req.params.id
+    models.TaxComputations.findOne({ "_id": id }, (err, computation) => {
+      if (err) {
+        return res.status(404).send('Erro in DB:' + err)
+      }
+      if (!!computation) {
+        models.TaxComputations.remove(computation, (err, result) => {
+          if (err) {
+            return res.status(404).send('Error in DB:' + err)
+          }
+          else return res.send('Successfully deleted')
+        })
+      }
+      else return res.status(404).send('The given ID is not found in DB')
+
+    })
+  })
 
   return router;
 }

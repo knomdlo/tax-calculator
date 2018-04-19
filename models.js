@@ -9,7 +9,7 @@ let TaxComputations = mongoose.model('TaxComputations', {
   netIncome: Number, //gross - salary
   netAndSa: Number, // Guess SA doesn't get added to tax.
   saPercentage: Number,
-  computationYear: Number
+  computationYear: String
 })
 
 let User = mongoose.model('users', {

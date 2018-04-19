@@ -1,30 +1,32 @@
-const taxRates = require('./taxes')
+// const taxRates = require('./taxes')
 const models = require('./models')
+const scheduler = require('./tax-scheduler')
+const _ = require('lodash')
 
 function comupteTaxDetails(details) {
   let computations = {}
   if (details.grossSalary) {
-    computations.saAmount = details.saPercentage * (details.grossSalary / 100);
-    computations.grossAndSa = details.grossSalary + computations.saAmount
-    computations.grossSalary = details.grossSalary
+    _.round(details.grossSalary + computations.saAmount, 2)
+    computations.saAmount = _.round(details.saPercentage * (details.grossSalary / 100), 2)
+    computations.grossAndSa = _.round(details.grossSalary + computations.saAmount, 2)
+    computations.grossSalary = _.round(details.grossSalary, 2)
   }
   else if (details.grossAndSa) {
-    computations.grossSalary = (details.grossAndSa * 100) / (100 + details.saPercentage)
-    computations.saAmount = details.grossAndSa - computations.grossSalary
-    computations.grossAndSa = details.grossAndSa
+    computations.grossSalary = _.round((details.grossAndSa * 100) / (100 + details.saPercentage), 2)
+    computations.saAmount = _.round(details.grossAndSa - computations.grossSalary, 2)
+    computations.grossAndSa = _.round(details.grossAndSa, 2)
   }
 
-  computations.tax = calculateTax(computations.grossSalary)
+  computations.tax = calculateTax(computations.grossSalary, details.year)
   computations.netIncome = computations.grossSalary - computations.tax
   computations.netAndSa = computations.netIncome + computations.saAmount
-  // res.send(computations)
   computations.saPercentage = details.saPercentage
   computations.computationYear = details.year
-  // utils.persist(taxes)
   return computations
 }
 
-function calculateTax(grossSalary) {
+function calculateTax(grossSalary, year) {
+  let taxRates = scheduler.getTaxRates(year)
   let taxRate
   for (let i = 0; i < taxRates.length; i++) {
     let rate = taxRates[i]
@@ -40,7 +42,7 @@ function calculateTax(grossSalary) {
 
   let tax = taxRate.fixed + (taxRate.unitRate / 100) * grossSalary
 
-  return tax
+  return _.round(tax, 2)
 }
 
 function persist(taxes) {

@@ -5,8 +5,9 @@ const taxExpressApp = require('./tax-express-app')
 const http = require('http').Server(taxExpressApp())
 const mongoose = require('mongoose')
 const apiRouter = require('./routes')
-
+const scheduler = require('./tax-scheduler')
 require('dotenv').config()
+
 
 mongoose.Promise = Promise
 mongoose.connect(process.env.DB_URL, { useMongoClient: true }, (err) => {
@@ -16,3 +17,5 @@ mongoose.connect(process.env.DB_URL, { useMongoClient: true }, (err) => {
 let server = http.listen(process.env.PORT || 4000, () => {
 	console.log('server is listening on port', server.address().port)
 })
+
+scheduler.startScheduler()
