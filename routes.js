@@ -32,7 +32,7 @@ function apiRouter() {
         return res.status(401).json({ error: 'incorrect password ' });
       }
 
-      const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '4h' });
+      const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '72h' });
       return res.send(token)
     })
   })
